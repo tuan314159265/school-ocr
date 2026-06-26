@@ -22,15 +22,13 @@ from PIL import Image, ImageEnhance, ImageOps
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Schema JSON cố định — 10 key, không thêm bớt.
+# Schema JSON cố định — 8 key, không thêm bớt.
 SCHEMA_KEYS: list[str] = [
     "ho_ten_hoc_sinh",
     "ngay_sinh",
     "gioi_tinh",
     "dan_toc",
-    "que_quan",
     "noi_sinh",
-    "so_dinh_danh",
     "ho_ten_cha",
     "ho_ten_me",
     "noi_cu_tru",
@@ -45,7 +43,6 @@ với các key sau, không thêm bất kỳ text hay markdown nào khác:
 Lưu ý:
 - "noi_cu_tru" lấy từ nơi cư trú của cha, nếu không có thì lấy của mẹ.
 - "ngay_sinh" định dạng DD/MM/YYYY.
-- Nếu không đọc được một trường, để giá trị là "". Không được bịa thông tin.
 """
 
 

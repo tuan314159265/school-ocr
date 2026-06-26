@@ -65,9 +65,7 @@ COLUMN_HEADERS: dict[str, str] = {
     "ngay_sinh": "Ngày sinh",
     "gioi_tinh": "Giới tính",
     "dan_toc": "Dân tộc",
-    "que_quan": "Quê quán",
     "noi_sinh": "Nơi sinh",
-    "so_dinh_danh": "Số định danh",
     "ho_ten_cha": "Họ tên cha",
     "ho_ten_me": "Họ tên mẹ",
     "noi_cu_tru": "Nơi cư trú",
@@ -81,9 +79,7 @@ HEADER_TO_KEY: dict[str, str] = {
     "Ngày sinh": "ngay_sinh",
     "Giới tính": "gioi_tinh",
     "Dân tộc": "dan_toc",
-    "Quê quán": "que_quan",
     "Nơi sinh": "noi_sinh",
-    "Số định danh": "so_dinh_danh",
     "Họ tên cha": "ho_ten_cha",
     "Họ tên mẹ": "ho_ten_me",
     "Nơi cư trú": "noi_cu_tru",
@@ -95,9 +91,6 @@ HEADER_TO_KEY: dict[str, str] = {
     "Mẹ": "ho_ten_me",
     "Họ tên người cha": "ho_ten_cha",
     "Họ tên người mẹ": "ho_ten_me",
-    "Số CCCD": "so_dinh_danh",
-    "Số CMND": "so_dinh_danh",
-    "CCCD": "so_dinh_danh",
 }
 
 # Cột hiển thị trong data_editor
@@ -117,16 +110,10 @@ def confidence_emoji(value: str) -> str:
 def is_duplicate(records: list[dict], new_record: dict) -> bool:
     """
     Kiểm tra new_record có trùng với record nào trong danh sách không.
-    So sánh theo 3 cấp: số định danh -> họ tên+ngày sinh -> họ tên+cha+mẹ.
+    So sánh theo 2 cấp: họ tên+ngày sinh -> họ tên+cha+mẹ.
     """
     for rec in records:
-        # Cấp 1: số định danh
-        new_cccd = new_record.get("so_dinh_danh", "").strip()
-        old_cccd = rec.get("so_dinh_danh", "").strip()
-        if new_cccd and old_cccd and new_cccd == old_cccd:
-            return True
-
-        # Cấp 2: họ tên + ngày sinh
+        # Cấp 1: họ tên + ngày sinh
         new_name = new_record.get("ho_ten_hoc_sinh", "").strip().lower()
         old_name = rec.get("ho_ten_hoc_sinh", "").strip().lower()
         new_dob = new_record.get("ngay_sinh", "").strip()
@@ -135,7 +122,7 @@ def is_duplicate(records: list[dict], new_record: dict) -> bool:
             if new_name == old_name and new_dob == old_dob:
                 return True
 
-        # Cấp 3: họ tên + họ tên cha + họ tên mẹ
+        # Cấp 2: họ tên + họ tên cha + họ tên mẹ
         new_father = new_record.get("ho_ten_cha", "").strip().lower()
         old_father = rec.get("ho_ten_cha", "").strip().lower()
         new_mother = new_record.get("ho_ten_me", "").strip().lower()

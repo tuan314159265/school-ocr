@@ -41,7 +41,7 @@ project/
 
 Nguồn dữ liệu đầu vào là **Giấy Khai Sinh** hoặc **Trích lục Khai Sinh** (in sẵn, có thể có chữ điền tay). Mục tiêu output là danh sách học sinh nhập học (Phase A1 — chưa có SĐT phụ huynh).
 
-Gemini **phải** trả về JSON với đúng 10 key sau (không được tự ý đặt tên khác):
+Gemini **phải** trả về JSON với đúng 8 key sau (không được tự ý đặt tên khác):
 
 ```json
 {
@@ -49,9 +49,7 @@ Gemini **phải** trả về JSON với đúng 10 key sau (không được tự 
   "ngay_sinh": "",
   "gioi_tinh": "",
   "dan_toc": "",
-  "que_quan": "",
   "noi_sinh": "",
-  "so_dinh_danh": "",
   "ho_ten_cha": "",
   "ho_ten_me": "",
   "noi_cu_tru": ""
@@ -65,7 +63,6 @@ Gemini **phải** trả về JSON với đúng 10 key sau (không được tự 
 | `ngay_sinh` | "Ngày, tháng, năm sinh" — format `DD/MM/YYYY` |
 | `gioi_tinh` | "Giới tính" |
 | `dan_toc` | "Dân tộc" (của trẻ) |
-| `que_quan` | "Quê quán" |
 | `noi_sinh` | "Nơi sinh" |
 | `so_dinh_danh` | "Số định danh cá nhân" |
 | `ho_ten_cha` | "Họ, chữ đệm, tên người cha" |
@@ -74,16 +71,14 @@ Gemini **phải** trả về JSON với đúng 10 key sau (không được tự 
 
 Nếu một trường không đọc được hoặc không có trên giấy, để giá trị là chuỗi rỗng `""`. Tuyệt đối không bịa thêm key.
 
-> **Roadmap:** Phase A2 (sau này) sẽ bổ sung thêm `sdt_cha`, `sdt_me` từ tờ phụ do phụ huynh điền tay — chưa cần xử lý ở phase này.
-
 ---
 
 ## Các file cần viết — theo thứ tự
 
 ### Step 0 (tiền đề — không cần file mới)
 - Nguồn ảnh đầu vào: **Giấy Khai Sinh** hoặc **Trích lục Khai Sinh** (Phase A1).
-- Schema JSON 10 trường ở trên là cố định cho toàn bộ project phase này.
-- Mọi xử lý DataFrame phải dựa trên đúng 10 key này.
+- Schema JSON 8 trường ở trên là cố định cho toàn bộ project phase này.
+- Mọi xử lý DataFrame phải dựa trên đúng 8 key này.
 
 ### Step 1 — `requirements.txt` + `ocr_engine.py`
 
