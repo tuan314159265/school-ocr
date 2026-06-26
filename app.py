@@ -59,7 +59,7 @@ def _get_api_key_and_model() -> tuple[str, str]:
 
     return "", "gemini-2.0-flash"
 
-# Mapping key -> tên cột Excel hiển thị
+# Mapping key -> tên cột Excel hiển thị (xuất ra)
 COLUMN_HEADERS: dict[str, str] = {
     "ho_ten_hoc_sinh": "Họ và tên học sinh",
     "ngay_sinh": "Ngày sinh",
@@ -73,8 +73,32 @@ COLUMN_HEADERS: dict[str, str] = {
     "noi_cu_tru": "Nơi cư trú",
 }
 
-# Ánh xạ ngược — tên cột Excel -> key
-HEADER_TO_KEY = {v: k for k, v in COLUMN_HEADERS.items()}
+# Ánh xạ ngược — tên cột Excel -> key (khi import)
+# Bao gồm các tên cột hay gặp trong thực tế
+HEADER_TO_KEY: dict[str, str] = {
+    # Tên chuẩn (xuất từ app)
+    "Họ và tên học sinh": "ho_ten_hoc_sinh",
+    "Ngày sinh": "ngay_sinh",
+    "Giới tính": "gioi_tinh",
+    "Dân tộc": "dan_toc",
+    "Quê quán": "que_quan",
+    "Nơi sinh": "noi_sinh",
+    "Số định danh": "so_dinh_danh",
+    "Họ tên cha": "ho_ten_cha",
+    "Họ tên mẹ": "ho_ten_me",
+    "Nơi cư trú": "noi_cu_tru",
+    # Tên thường gặp ngoài thực tế
+    "Họ và tên": "ho_ten_hoc_sinh",
+    "Ngày tháng năm sinh": "ngay_sinh",
+    "Nơi thường trú": "noi_cu_tru",
+    "Cha": "ho_ten_cha",
+    "Mẹ": "ho_ten_me",
+    "Họ tên người cha": "ho_ten_cha",
+    "Họ tên người mẹ": "ho_ten_me",
+    "Số CCCD": "so_dinh_danh",
+    "Số CMND": "so_dinh_danh",
+    "CCCD": "so_dinh_danh",
+}
 
 # Cột hiển thị trong data_editor
 EDITOR_COLUMNS = SCHEMA_KEYS  # 10 keys
