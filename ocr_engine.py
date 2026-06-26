@@ -232,7 +232,12 @@ class OCREngine:
                 last_error = exc
                 error_str = str(exc)
 
-                # Retry nếu bị rate limit hoặc lỗi tạm thời
+                # Kiểm tra nếu hết quota ngày — không retry
+                if "limit: 0" in error_str:
+                    logger.error("API key đã hết quota ngày. Không thể xử lý thêm.")
+                    break
+
+                # Retry nếu bị rate limit tạm thời (429)
                 if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
                     if attempt < max_retries - 1:
                         delay = 10 * (attempt + 1)  # 10s, 20s, 30s
