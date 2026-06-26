@@ -8,7 +8,6 @@ venv/
 # Build output
 dist/
 build/
-*.spec
 
 # Config — chứa API key, không push lên git
 config.json
