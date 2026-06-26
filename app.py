@@ -215,13 +215,22 @@ st.title("School Registration OCR — Nhập liệu tự động")
 # Đọc API key từ Secrets (cloud) hoặc config.json (local)
 API_KEY, MODEL_NAME = _get_api_key_and_model()
 
-engine: OCREngine | None = None
-engine_ready = False
+# Cache engine trong session_state để không gọi test_connection() mỗi lần re-render
+if "engine" not in st.session_state or st.session_state.get("_last_api_key") != API_KEY:
+    engine: OCREngine | None = None
+    engine_ready = False
 
-if API_KEY:
-    engine = OCREngine(API_KEY)
-    engine.update_model(MODEL_NAME)
-    engine_ready = engine.test_connection()
+    if API_KEY:
+        engine = OCREngine(API_KEY)
+        engine.update_model(MODEL_NAME)
+        engine_ready = engine.test_connection()
+
+    st.session_state["engine"] = engine
+    st.session_state["_engine_ready"] = engine_ready
+    st.session_state["_last_api_key"] = API_KEY
+
+engine = st.session_state.get("engine")
+engine_ready = st.session_state.get("_engine_ready", False)
 
 if not engine_ready:
     st.error(
