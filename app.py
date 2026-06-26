@@ -37,7 +37,7 @@ def _get_api_key_and_model() -> tuple[str, str]:
     # Thử từ Streamlit Secrets trước
     try:
         api_key = st.secrets.get("api_key", "")
-        model = st.secrets.get("model", "gemini-2.0-flash")
+        model = st.secrets.get("model", "gemini-3.1-flash-lite")
         if api_key:
             return api_key, model
     except Exception:
@@ -53,11 +53,11 @@ def _get_api_key_and_model() -> tuple[str, str]:
     if config_file.exists():
         try:
             cfg = json.loads(config_file.read_text(encoding="utf-8"))
-            return cfg.get("api_key", ""), cfg.get("model", "gemini-2.0-flash")
+            return cfg.get("api_key", ""), cfg.get("model", "gemini-3.1-flash-lite")
         except Exception:
             pass
 
-    return "", "gemini-2.0-flash"
+    return "", "gemini-3.1-flash-lite"
 # Mapping key -> tên cột Excel hiển thị (xuất ra)
 COLUMN_HEADERS: dict[str, str] = {
     "ho_ten_hoc_sinh": "Họ và tên học sinh",
@@ -235,7 +235,7 @@ if not engine_ready:
     st.error(
         "Chưa có API key hoặc key không hợp lệ.\n\n"
         "- **Dùng local:** tạo file **config.json** cùng thư mục với:\n"
-        '  `{"api_key": "AIzaSy...", "model": "gemini-2.0-flash"}`\n\n'
+        '  `{"api_key": "AIzaSy...", "model": "gemini-3.1-flash-lite"}`\n\n'
         "- **Dùng Streamlit Cloud:** vào Settings → Secrets, thêm:\n"
         "  ```\n"
         "  api_key = \"AIzaSy...\"\n"

@@ -125,7 +125,7 @@ class OCREngine:
         """
         self.api_key = api_key
         self._client: genai.Client | None = None
-        self.model_name: str = "gemini-2.0-flash"
+        self.model_name: str = "gemini-3.1-flash-lite"
         logger.info("OCREngine khởi tạo với model %s", self.model_name)
 
     # ------------------------------------------------------------------
