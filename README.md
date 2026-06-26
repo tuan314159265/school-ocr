@@ -2,6 +2,30 @@
 
 Công cụ OCR tự động đọc **Giấy Khai Sinh / Trích lục Khai Sinh** thành file Excel danh sách học sinh.
 
+## Cách dùng (Streamlit Cloud)
+
+**Bước 1 — Deploy:**
+
+1. Fork repo này về GitHub của bạn (hoặc push lên repo private)
+2. Vào https://share.streamlit.io , đăng nhập bằng GitHub
+3. Chọn repo `school-ocr`, bấm **Deploy**
+4. Sau khi deploy xong, vào **Settings → Secrets** và thêm:
+
+```
+api_key = "Gemini_API_key_của_bạn"
+model = "gemini-2.0-flash"
+```
+
+5. Bấm **Save**, app tự chạy lại — xong!
+
+**Bước 2 — Sử dụng:**
+
+1. Mở link web app (dạng `https://school-ocr-xxx.streamlit.app`)
+2. **Mở file Excel cũ** (nếu có) để nạp danh sách học sinh hiện tại
+3. **Kéo thả ảnh** Giấy Khai Sinh vào khung upload
+4. Bấm **Bắt đầu quét dữ liệu** — app tự OCR và thêm vào danh sách
+5. **Lưu file Excel** — tải về danh sách tổng hợp
+
 ## Chạy local
 
 ```bash
@@ -41,11 +65,3 @@ pyinstaller school_ocr.spec
 ```
 
 File `.exe` ở `dist/school_ocr.exe`, đặt `config.json` cạnh nó.
-
-## Deploy lên Streamlit Cloud
-
-1. Push code lên GitHub
-2. Vào https://share.streamlit.io , deploy repo
-3. Vào Settings → Secrets, thêm:
-   - `api_key`: Gemini API key
-   - `model`: `gemini-2.0-flash`
