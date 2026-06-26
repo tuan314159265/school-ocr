@@ -237,12 +237,12 @@ class OCREngine:
                     logger.error("API key đã hết quota ngày. Không thể xử lý thêm.")
                     break
 
-                # Retry nếu bị rate limit tạm thời (429)
-                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                # Retry nếu bị rate limit tạm thời (429) hoặc server quá tải (503)
+                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str or "503" in error_str or "UNAVAILABLE" in error_str:
                     if attempt < max_retries - 1:
-                        delay = 10 * (attempt + 1)  # 10s, 20s, 30s
+                        delay = (10 * (attempt + 1)) + 5  # 15s, 25s, 35s
                         logger.warning(
-                            "Rate limit (lần %d/%d), đợi %ds rồi thử lại...",
+                            "Gemini quá tải (lần %d/%d), đợi %ds rồi thử lại...",
                             attempt + 1, max_retries, delay,
                         )
                         _time.sleep(delay)
