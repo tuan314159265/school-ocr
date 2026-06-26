@@ -184,9 +184,10 @@ class OCREngine:
         """
         try:
             client = self._get_client()
-            # Chỉ lấy 1 page, không generate — không tốn quota
-            list(client.models.list(page_size=1))
-            return True
+            # Chỉ lấy 1 model, không generate — không tốn quota
+            for _ in client.models.list():
+                return True
+            return False
         except Exception as exc:
             logger.warning("Test connection thất bại: %s", exc)
             return False
