@@ -302,30 +302,58 @@ if st.button("Bắt đầu quét dữ liệu", type="primary", disabled=not uplo
     status_text = st.empty()
 
     total = len(uploaded_files)
-    skip_count = 0
-    new_count = 0
 
-    for idx, uploaded_file in enumerate(uploaded_files):
-        status_text.info(f"Đang xử lý: {uploaded_file.name} ({idx + 1}/{total})")
+    # Xử lý song song bằng ThreadPool — mỗi ảnh chạy độc lập
+    from concurrent.futures import ThreadPoolExecutor, as_completed
 
+    # Mở ảnh trước (thread-safe)
+    images = []
+    for f in uploaded_files:
         try:
-            image = Image.open(uploaded_file)
-            result = engine.process_image(image)
+            img = Image.open(f)
+            images.append((img, f.name))
         except Exception:
-            result = {k: "" for k in SCHEMA_KEYS}
-            result["_confidence"] = "error"
-            result["_filename"] = uploaded_file.name
+            images.append((None, f.name))
 
-        if is_duplicate(st.session_state["records"], result):
-            skip_count += 1
-            status_text.info(f"Bỏ qua {uploaded_file.name} (trùng dữ liệu)")
-        else:
-            st.session_state["records"].append(result)
-            new_count += 1
+    results: list[dict | None] = [None] * total
 
-        progress_bar.progress(
-            (idx + 1) / total, text=f"Đã xử lý {idx + 1}/{total}"
-        )
+    with ThreadPoolExecutor(max_workers=min(total, 5)) as executor:
+        future_map = {}
+        for idx, (img, fname) in enumerate(images):
+            if img is None:
+                # Ảnh lỗi -> ghi nhận lỗi luôn
+                result = {k: "" for k in SCHEMA_KEYS}
+                result["_confidence"] = "error"
+                result["_filename"] = fname
+                results[idx] = result
+                continue
+
+            future = executor.submit(engine.process_image, img)
+            future_map[future] = (idx, fname)
+
+        skip_count = 0
+        new_count = 0
+        done_count = 0
+
+        for future in as_completed(future_map):
+            idx, fname = future_map[future]
+            done_count += 1
+            status_text.info(f"Đang xử lý: {fname} ({done_count}/{total})")
+
+            try:
+                result = future.result()
+            except Exception:
+                result = {k: "" for k in SCHEMA_KEYS}
+                result["_confidence"] = "error"
+                result["_filename"] = fname
+
+            if is_duplicate(st.session_state["records"], result):
+                skip_count += 1
+            else:
+                st.session_state["records"].append(result)
+                new_count += 1
+
+            progress_bar.progress(done_count / total, text=f"Đã xử lý {done_count}/{total}")
 
     status_text.success(f"Hoàn thành: thêm {new_count}, bỏ qua {skip_count} trùng.")
     time.sleep(1.5)
