@@ -179,17 +179,13 @@ class OCREngine:
 
     def test_connection(self) -> bool:
         """
-        Kiểm tra API key có hoạt động không.
-        Trả về True nếu OK, False nếu lỗi.
-        Chỉ gọi 1 model đơn lẻ, không list hết models.
+        Kiểm tra API key có hoạt động không bằng cách list models.
+        Không tốn quota generate_content.
         """
         try:
             client = self._get_client()
-            # Gọi generate với prompt cực ngắn để test key
-            client.models.generate_content(
-                model=self.model_name,
-                contents="OK",
-            )
+            # Chỉ lấy 1 page, không generate — không tốn quota
+            list(client.models.list(page_size=1))
             return True
         except Exception as exc:
             logger.warning("Test connection thất bại: %s", exc)
