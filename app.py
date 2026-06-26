@@ -58,7 +58,6 @@ def _get_api_key_and_model() -> tuple[str, str]:
             pass
 
     return "", "gemini-2.0-flash"
-
 # Mapping key -> tên cột Excel hiển thị (xuất ra)
 COLUMN_HEADERS: dict[str, str] = {
     "ho_ten_hoc_sinh": "Họ và tên học sinh",

@@ -121,11 +121,11 @@ class OCREngine:
     def __init__(self, api_key: str) -> None:
         """
         Khởi tạo engine với API key.
+        Model mặc định: gemini-2.0-flash (quota 1500 req/ngày, free).
         """
         self.api_key = api_key
         self._client: genai.Client | None = None
-        # Model mặc định: gemini-1.5-pro
-        self.model_name: str = "gemini-1.5-pro"
+        self.model_name: str = "gemini-2.0-flash"
         logger.info("OCREngine khởi tạo với model %s", self.model_name)
 
     # ------------------------------------------------------------------
@@ -205,26 +205,52 @@ class OCREngine:
             self._client = genai.Client(api_key=self.api_key)
         return self._client
 
-    def _call_gemini(self, image: Image.Image) -> str:
+    def _call_gemini(self, image: Image.Image, max_retries: int = 3) -> str:
         """
         Gửi ảnh + prompt lên Gemini, trả về text response.
+        Tự động retry khi bị rate limit (429) hoặc lỗi tạm thời.
         """
+        import time as _time
+
         client = self._get_client()
 
         schema_str = json.dumps({k: "" for k in SCHEMA_KEYS}, ensure_ascii=False, indent=2)
         prompt = PROMPT_TEMPLATE.format(schema_json=schema_str)
 
-        # Upload ảnh lên Gemini trước
-        # (google-genai hỗ trợ gửi PIL.Image trực tiếp)
-        response = client.models.generate_content(
-            model=self.model_name,
-            contents=[prompt, image],
-        )
+        last_error: Exception | None = None
 
-        if not response.text:
-            raise ValueError("Gemini trả về response rỗng (text = None)")
+        for attempt in range(max_retries):
+            try:
+                response = client.models.generate_content(
+                    model=self.model_name,
+                    contents=[prompt, image],
+                )
 
-        return response.text.strip()
+                if not response.text:
+                    raise ValueError("Gemini trả về response rỗng (text = None)")
+
+                return response.text.strip()
+
+            except Exception as exc:
+                last_error = exc
+                error_str = str(exc)
+
+                # Retry nếu bị rate limit hoặc lỗi tạm thời
+                if "429" in error_str or "RESOURCE_EXHAUSTED" in error_str:
+                    if attempt < max_retries - 1:
+                        delay = 10 * (attempt + 1)  # 10s, 20s, 30s
+                        logger.warning(
+                            "Rate limit (lần %d/%d), đợi %ds rồi thử lại...",
+                            attempt + 1, max_retries, delay,
+                        )
+                        _time.sleep(delay)
+                        continue
+                else:
+                    # Lỗi khác (4xx, 5xx) — không retry
+                    break
+
+        # Hết retry hoặc lỗi không retry được
+        raise last_error  # type: ignore[misc]
 
     def _parse_response(self, text: str) -> dict[str, Any]:
         """
