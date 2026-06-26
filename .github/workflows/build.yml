@@ -1,0 +1,38 @@
+name: Build Windows .exe
+
+on:
+  push:
+    tags:
+      - 'v*'          # Chạy khi push tag v1.0, v2.0, ...
+  workflow_dispatch:   # Cho phép bấm nút "Run workflow" trên GitHub
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      - name: Build .exe với PyInstaller
+        run: |
+          pyinstaller school_ocr.spec
+
+      - name: Upload .exe và config mẫu
+        uses: actions/upload-artifact@v4
+        with:
+          name: school_ocr_windows
+          path: |
+            dist/school_ocr.exe
+            config.example.json

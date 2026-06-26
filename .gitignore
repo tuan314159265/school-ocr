@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+venv/
+.env
+
+# Build output
+dist/
+build/
+*.spec
+
+# Config — chứa API key, không push lên git
+config.json
+.streamlit/secrets.toml
