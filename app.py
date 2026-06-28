@@ -58,34 +58,36 @@ def _get_api_key_and_model() -> tuple[str, str]:
             pass
 
     return "", "gemini-3.1-flash-lite"
-# Mapping key -> tên cột Excel hiển thị (xuất ra)
-COLUMN_HEADERS: dict[str, str] = {
-    "ho_ten_hoc_sinh": "Họ và tên học sinh",
-    "ngay_sinh": "Ngày sinh",
-    "gioi_tinh": "Giới tính",
-    "dan_toc": "Dân tộc",
-    "noi_sinh": "Nơi sinh",
-    "ho_ten_cha": "Họ tên cha",
-    "ho_ten_me": "Họ tên mẹ",
-    "noi_cu_tru": "Nơi cư trú",
-}
+
+# Mapping key -> tên cột Excel hiển thị theo thứ tự (xuất ra)
+# key "" là cột trống
+EXCEL_COLUMNS: list[tuple[str, str]] = [
+    ("_stt", "STT"),
+    ("ho_ten_hoc_sinh", "Họ và tên học sinh"),
+    ("ngay_sinh", "Ngày tháng năm sinh"),
+    ("gioi_tinh", "Giới tính"),
+    ("noi_sinh", "Nơi sinh"),
+    ("dan_toc", "Dân tộc"),
+    ("noi_cu_tru", "Địa chỉ"),
+    ("", ""),
+    ("ho_ten_cha", "Họ tên cha"),
+    ("ho_ten_me", "Họ tên mẹ"),
+]
 
 # Ánh xạ ngược — tên cột Excel -> key (khi import)
-# Bao gồm các tên cột hay gặp trong thực tế
 HEADER_TO_KEY: dict[str, str] = {
-    # Tên chuẩn (xuất từ app)
     "Họ và tên học sinh": "ho_ten_hoc_sinh",
-    "Ngày sinh": "ngay_sinh",
+    "Ngày tháng năm sinh": "ngay_sinh",
     "Giới tính": "gioi_tinh",
     "Dân tộc": "dan_toc",
     "Nơi sinh": "noi_sinh",
+    "Địa chỉ": "noi_cu_tru",
     "Họ tên cha": "ho_ten_cha",
     "Họ tên mẹ": "ho_ten_me",
-    "Nơi cư trú": "noi_cu_tru",
-    # Tên thường gặp ngoài thực tế
     "Họ và tên": "ho_ten_hoc_sinh",
-    "Ngày tháng năm sinh": "ngay_sinh",
+    "Ngày sinh": "ngay_sinh",
     "Nơi thường trú": "noi_cu_tru",
+    "Nơi cư trú": "noi_cu_tru",
     "Cha": "ho_ten_cha",
     "Mẹ": "ho_ten_me",
     "Họ tên người cha": "ho_ten_cha",
@@ -158,12 +160,9 @@ def records_to_dataframe(records: list[dict]) -> pd.DataFrame:
 
 def create_excel(df: pd.DataFrame) -> BytesIO:
     """
-    Tạo file Excel từ DataFrame.
-    Bỏ _confidence và _filename, header tiếng Việt, format đẹp.
+    Tạo file Excel từ DataFrame theo thứ tự cột EXCEL_COLUMNS.
+    Tự động thêm STT, thêm cột trống.
     """
-    export_df = df[SCHEMA_KEYS].copy()
-    export_df = export_df.rename(columns=COLUMN_HEADERS)
-
     wb = Workbook()
     ws = wb.active
     ws.title = "Danh sách học sinh"
@@ -178,25 +177,40 @@ def create_excel(df: pd.DataFrame) -> BytesIO:
         bottom=Side(style="thin"),
     )
 
-    for col_idx, col_name in enumerate(export_df.columns, start=1):
-        cell = ws.cell(row=1, column=col_idx, value=col_name)
+    # Ghi header theo EXCEL_COLUMNS
+    for col_idx, (key, header_name) in enumerate(EXCEL_COLUMNS, start=1):
+        cell = ws.cell(row=1, column=col_idx, value=header_name)
         cell.font = header_font
         cell.fill = header_fill
         cell.alignment = header_alignment
         cell.border = thin_border
 
-    for row_idx, (_, row) in enumerate(export_df.iterrows(), start=2):
-        for col_idx, col_name in enumerate(export_df.columns, start=1):
-            cell = ws.cell(row=row_idx, column=col_idx, value=row[col_name])
+    # Ghi dữ liệu theo từng dòng
+    for row_idx in range(len(df)):
+        excel_row = row_idx + 2  # dòng 1 là header
+        for col_idx, (key, _) in enumerate(EXCEL_COLUMNS, start=1):
+            if key == "_stt":
+                value = row_idx + 1  # STT tự động
+            elif key == "":
+                value = ""  # cột trống
+            else:
+                value = df.iloc[row_idx].get(key, "")
+
+            cell = ws.cell(row=excel_row, column=col_idx, value=value)
             cell.alignment = Alignment(vertical="center")
             cell.border = thin_border
 
-    for col_idx, col_name in enumerate(export_df.columns, start=1):
-        max_len = max(
-            export_df[col_name].astype(str).map(len).max() if len(export_df) > 0 else 0,
-            len(col_name),
-        )
-        ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 4, 40)
+    # Auto-adjust độ rộng cột
+    for col_idx, (key, header_name) in enumerate(EXCEL_COLUMNS, start=1):
+        if key == "":
+            ws.column_dimensions[get_column_letter(col_idx)].width = 3
+            continue
+        # Ước lượng độ rộng
+        max_len = len(header_name)
+        if key != "_stt" and key in df.columns:
+            col_data_len = df[key].astype(str).map(len).max() if len(df) > 0 else 0
+            max_len = max(max_len, col_data_len)
+        ws.column_dimensions[get_column_letter(col_idx)].width = min(max_len + 4, 45)
 
     buf = BytesIO()
     wb.save(buf)
@@ -377,6 +391,12 @@ if records:
     display_columns = ["_confidence", "_filename"] + EDITOR_COLUMNS
     display_columns = [c for c in display_columns if c in df_display.columns]
 
+    # Tạo mapping header cho data_editor từ EXCEL_COLUMNS
+    editor_header_map = {}
+    for key, header_name in EXCEL_COLUMNS:
+        if key and key != "_stt":
+            editor_header_map[key] = header_name
+
     edited = st.data_editor(
         df_display[display_columns],
         width="stretch",
@@ -384,7 +404,7 @@ if records:
         column_config={
             "_confidence": st.column_config.TextColumn("Trạng thái", disabled=True, width="small"),
             "_filename": st.column_config.TextColumn("Tập tin", disabled=True, width="medium"),
-            **{key: st.column_config.TextColumn(COLUMN_HEADERS.get(key, key), width="medium") for key in SCHEMA_KEYS},
+            **{key: st.column_config.TextColumn(header_name, width="medium") for key, header_name in EXCEL_COLUMNS if key and key != "_stt"},
         },
         num_rows="dynamic",
     )
