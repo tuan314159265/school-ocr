@@ -1,0 +1,10 @@
+[theme]
+# Pastel pink theme
+primaryColor = "#E88DAB"
+backgroundColor = "#FFF5F7"
+secondaryBackgroundColor = "#FFE9EE"
+textColor = "#5C4050"
+font = "sans serif"
+
+[server]
+maxUploadSize = 20

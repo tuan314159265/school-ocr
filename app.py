@@ -75,24 +75,36 @@ EXCEL_COLUMNS: list[tuple[str, str]] = [
 ]
 
 # Ánh xạ ngược — tên cột Excel -> key (khi import)
+# Chuẩn hoá: trim, lowercase, nén khoảng trắng trước khi tra
 HEADER_TO_KEY: dict[str, str] = {
-    "Họ và tên học sinh": "ho_ten_hoc_sinh",
-    "Ngày tháng năm sinh": "ngay_sinh",
-    "Giới tính": "gioi_tinh",
-    "Dân tộc": "dan_toc",
-    "Nơi sinh": "noi_sinh",
-    "Địa chỉ": "noi_cu_tru",
-    "Họ tên cha": "ho_ten_cha",
-    "Họ tên mẹ": "ho_ten_me",
-    "Họ và tên": "ho_ten_hoc_sinh",
-    "Ngày sinh": "ngay_sinh",
-    "Nơi thường trú": "noi_cu_tru",
-    "Nơi cư trú": "noi_cu_tru",
-    "Cha": "ho_ten_cha",
-    "Mẹ": "ho_ten_me",
-    "Họ tên người cha": "ho_ten_cha",
-    "Họ tên người mẹ": "ho_ten_me",
+    "ho va ten hoc sinh": "ho_ten_hoc_sinh",
+    "ho ten hoc sinh": "ho_ten_hoc_sinh",
+    "ho va ten": "ho_ten_hoc_sinh",
+    "ho ten": "ho_ten_hoc_sinh",
+    "ngay thang nam sinh": "ngay_sinh",
+    "ngay sinh": "ngay_sinh",
+    "ngay, thang, nam sinh": "ngay_sinh",
+    "gioi tinh": "gioi_tinh",
+    "dan toc": "dan_toc",
+    "noi sinh": "noi_sinh",
+    "noi cu tru": "noi_cu_tru",
+    "noi thuong tru": "noi_cu_tru",
+    "dia chi": "noi_cu_tru",
+    "ho ten cha": "ho_ten_cha",
+    "ho ten nguoi cha": "ho_ten_cha",
+    "cha": "ho_ten_cha",
+    "ho ten me": "ho_ten_me",
+    "ho ten nguoi me": "ho_ten_me",
+    "me": "ho_ten_me",
 }
+
+# Biến thể header chứa dấu câu — gom riêng để dễ bảo trì
+HEADER_PUNCT_VARIANTS: dict[str, list[str]] = {
+    "ngay_sinh": ["ngay sinh:", "ngay, thang, nam sinh:", "ngay thang nam sinh:"],
+}
+for key, variants in HEADER_PUNCT_VARIANTS.items():
+    for v in variants:
+        HEADER_TO_KEY.setdefault(v, key)
 
 # Cột hiển thị trong data_editor
 EDITOR_COLUMNS = SCHEMA_KEYS  # 10 keys
@@ -135,14 +147,43 @@ def is_duplicate(records: list[dict], new_record: dict) -> bool:
     return False
 
 
+def _col_key(col: str) -> str:
+    """Chuẩn hoá tên cột về lowercase, trim, nén khoảng trắng để tra HEADER_TO_KEY."""
+    return " ".join(col.strip().lower().split())
+
+
+def _fmt(val: Any) -> str:
+    """
+    Chuyển giá trị ô Excel về string sạch:
+      - datetime -> chỉ DD/MM/YYYY (nếu có giờ)
+      - NaT/NaN -> ""
+      - None -> ""
+    """
+    if pd.isna(val):
+        return ""
+    if isinstance(val, pd.Timestamp):
+        return val.strftime("%d/%m/%Y")
+    if isinstance(val, datetime):
+        return val.strftime("%d/%m/%Y")
+    s = str(val).strip()
+    if s.lower() in ("nat", "nan", "none", "null", ""):
+        return ""
+    return s
+
+
 def read_excel_to_records(file) -> list[dict]:
-    """Đọc file Excel, chuẩn hoá header, trả về danh sách records."""
+    """Đọc file Excel, chuẩn hoá header, trả về danh sách records (SCHEMA_KEYS)."""
     df = pd.read_excel(file)
-    df = df.rename(columns=HEADER_TO_KEY)
-    valid_cols = [c for c in df.columns if c in SCHEMA_KEYS]
+    # Chuẩn hoá tên cột
+    col_map = {}
+    for c in df.columns:
+        key = _col_key(str(c))
+        if key in HEADER_TO_KEY:
+            col_map[c] = HEADER_TO_KEY[key]
+    df = df.rename(columns=col_map)
     records = []
     for _, row in df.iterrows():
-        record = {k: str(row.get(k, "")) for k in SCHEMA_KEYS}
+        record = {k: _fmt(row.get(k)) for k in SCHEMA_KEYS}
         record["_confidence"] = "ok"
         record["_filename"] = "imported"
         records.append(record)
@@ -223,6 +264,33 @@ def create_excel(df: pd.DataFrame) -> BytesIO:
 # ---------------------------------------------------------------------------
 
 st.set_page_config(page_title="School OCR", layout="wide")
+
+# Custom CSS — pastel pink theme mở rộng
+st.markdown("""
+<style>
+    .stApp { background-color: #FFF5F7; }
+    .st-emotion-cache-1v7f65g .e1b2p2ww6 { background-color: #FFE9EE; }
+    .stButton > button {
+        background-color: #E88DAB !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 8px !important;
+    }
+    .stButton > button:hover {
+        background-color: #D47A9A !important;
+        color: white !important;
+    }
+    /* data editor */
+    .stDataFrame { border: 1px solid #F0D0DA; border-radius: 8px; }
+    /* header */
+    h1, h2, h3 { color: #5C4050 !important; }
+    /* metric */
+    .stMetric { background: #FFE9EE; padding: 12px; border-radius: 10px; }
+    /* expander */
+    .st-emotion-cache-pkbk9p { border: 1px solid #F0D0DA; border-radius: 8px; }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("School Registration OCR — Nhập liệu tự động")
 
 # Đọc API key từ Secrets (cloud) hoặc config.json (local)
