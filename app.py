@@ -266,7 +266,7 @@ def create_excel(df: pd.DataFrame) -> BytesIO:
 st.set_page_config(page_title="School OCR", layout="wide")
 
 # Custom CSS — pastel pink theme mở rộng
-st.markdown("""
+st.html("""
 <style>
     .stApp { background-color: #FFF5F7; }
     .st-emotion-cache-1v7f65g .e1b2p2ww6 { background-color: #FFE9EE; }
@@ -280,16 +280,12 @@ st.markdown("""
         background-color: #D47A9A !important;
         color: white !important;
     }
-    /* data editor */
     .stDataFrame { border: 1px solid #F0D0DA; border-radius: 8px; }
-    /* header */
     h1, h2, h3 { color: #5C4050 !important; }
-    /* metric */
     .stMetric { background: #FFE9EE; padding: 12px; border-radius: 10px; }
-    /* expander */
     .st-emotion-cache-pkbk9p { border: 1px solid #F0D0DA; border-radius: 8px; }
 </style>
-""", unsafe_allow_html=True)
+""")
 
 st.title("School Registration OCR — Nhập liệu tự động")
 
