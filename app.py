@@ -75,7 +75,7 @@ EXCEL_COLUMNS: list[tuple[str, str]] = [
 ]
 
 # Ánh xạ ngược — tên cột Excel -> key (khi import)
-# Chuẩn hoá: trim, lowercase, nén khoảng trắng trước khi tra
+# Tất cả key ở dạng không dấu, lowercase, trim
 HEADER_TO_KEY: dict[str, str] = {
     "ho va ten hoc sinh": "ho_ten_hoc_sinh",
     "ho ten hoc sinh": "ho_ten_hoc_sinh",
@@ -98,7 +98,7 @@ HEADER_TO_KEY: dict[str, str] = {
     "me": "ho_ten_me",
 }
 
-# Biến thể header chứa dấu câu — gom riêng để dễ bảo trì
+# Biến thể header chứa dấu câu — chuẩn hoá bằng _col_key nên chỉ cần một ít
 HEADER_PUNCT_VARIANTS: dict[str, list[str]] = {
     "ngay_sinh": ["ngay sinh:", "ngay, thang, nam sinh:", "ngay thang nam sinh:"],
 }
@@ -148,8 +148,25 @@ def is_duplicate(records: list[dict], new_record: dict) -> bool:
 
 
 def _col_key(col: str) -> str:
-    """Chuẩn hoá tên cột về lowercase, trim, nén khoảng trắng để tra HEADER_TO_KEY."""
-    return " ".join(col.strip().lower().split())
+    """Chuẩn hoá tên cột về không dấu, lowercase, trim, nén khoảng trắng."""
+    s = col.strip().lower()
+    # Xóa dấu tiếng Việt
+    s = (
+        s.replace("à", "a").replace("á", "a").replace("ả", "a").replace("ã", "a").replace("ạ", "a")
+        .replace("ă", "a").replace("ằ", "a").replace("ắ", "a").replace("ẳ", "a").replace("ẵ", "a").replace("ặ", "a")
+        .replace("â", "a").replace("ầ", "a").replace("ấ", "a").replace("ẩ", "a").replace("ẫ", "a").replace("ậ", "a")
+        .replace("è", "e").replace("é", "e").replace("ẻ", "e").replace("ẽ", "e").replace("ẹ", "e")
+        .replace("ê", "e").replace("ề", "e").replace("ế", "e").replace("ể", "e").replace("ễ", "e").replace("ệ", "e")
+        .replace("ì", "i").replace("í", "i").replace("ỉ", "i").replace("ĩ", "i").replace("ị", "i")
+        .replace("ò", "o").replace("ó", "o").replace("ỏ", "o").replace("õ", "o").replace("ọ", "o")
+        .replace("ô", "o").replace("ồ", "o").replace("ố", "o").replace("ổ", "o").replace("ỗ", "o").replace("ộ", "o")
+        .replace("ơ", "o").replace("ờ", "o").replace("ớ", "o").replace("ở", "o").replace("ỡ", "o").replace("ợ", "o")
+        .replace("ù", "u").replace("ú", "u").replace("ủ", "u").replace("ũ", "u").replace("ụ", "u")
+        .replace("ư", "u").replace("ừ", "u").replace("ứ", "u").replace("ử", "u").replace("ữ", "u").replace("ự", "u")
+        .replace("ỳ", "y").replace("ý", "y").replace("ỷ", "y").replace("ỹ", "y").replace("ỵ", "y")
+        .replace("đ", "d")
+    )
+    return " ".join(s.split())
 
 
 def _fmt(val: Any) -> str:
