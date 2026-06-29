@@ -386,6 +386,9 @@ with col_upload:
         type=["jpg", "jpeg", "png"],
         accept_multiple_files=True,
     )
+    if uploaded_files:
+        total_mb = sum(f.size for f in uploaded_files) / (1024 * 1024)
+        st.caption(f"Tổng dung lượng: {total_mb:.1f} MB ({len(uploaded_files)} ảnh)")
 
 with col_status:
     st.metric("Số học sinh", len(st.session_state["records"]))
